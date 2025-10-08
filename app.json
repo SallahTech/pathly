@@ -1,30 +1,77 @@
 {
   "expo": {
-    "name": "pathly",
+    "name": "Pathly",
     "slug": "pathly",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#2563EB"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Pathly needs location access to track your journeys and record your routes.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Pathly needs location access to track your journeys and record your routes.",
+        "NSLocationAlwaysUsageDescription": "Pathly needs location access to track your journeys and record your routes.",
+        "NSCameraUsageDescription": "Pathly needs camera access to let you take photos for your routes.",
+        "NSPhotoLibraryUsageDescription": "Pathly needs photo library access to let you select photos for your routes."
+      },
+      "bundleIdentifier": "com.anonymous.pathly"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#2563EB"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.WAKE_LOCK"
+      ],
+      "package": "com.anonymous.pathly"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Pathly needs location access to track your journeys and record your routes.",
+          "locationAlwaysPermission": "Pathly needs location access to track your journeys and record your routes.",
+          "locationWhenInUsePermission": "Pathly needs location access to track your journeys and record your routes.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Pathly needs photo library access to let you select photos for your routes.",
+          "cameraPermission": "Pathly needs camera access to let you take photos for your routes."
+        }
+      ],
+      [
+        "expo-background-fetch"
+      ]
+    ]
   }
 }
