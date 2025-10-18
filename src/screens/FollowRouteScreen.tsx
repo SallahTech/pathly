@@ -284,7 +284,7 @@ const createThemedStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    padding: 1,
     paddingBottom: 8,
   },
   backButton: {

@@ -25,7 +25,13 @@ function HomeStack() {
       <Stack.Screen
         name="HomeMain"
         component={HomeScreen}
-        options={{ headerShown: false }}
+        options={{ 
+          headerShown: false,
+          title: 'Home',
+          headerStyle: { backgroundColor: colors.primary },
+          headerTitleStyle: { color: colors.text },
+          headerTintColor: colors.text,
+        }}
       />
       <Stack.Screen
         name="SaveRoute"
@@ -33,7 +39,8 @@ function HomeStack() {
         options={{
           title: 'Save Route',
           headerStyle: { backgroundColor: colors.primary },
-          headerTintColor: colors.surface,
+          headerTitleStyle: { color: colors.text },
+          headerTintColor: colors.text,
         }}
       />
     </Stack.Navigator>
