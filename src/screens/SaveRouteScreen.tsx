@@ -33,6 +33,18 @@ export default function SaveRouteScreen() {
 
   const handlePickImage = async () => {
     try {
+      // Request media library permissions first
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert(
+          'Photo Library Permission Required',
+          'Pathly needs photo library access to select photos for your routes. Please enable photo library permissions in your device settings.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -51,6 +63,18 @@ export default function SaveRouteScreen() {
 
   const handleTakePhoto = async () => {
     try {
+      // Request camera permissions first
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert(
+          'Camera Permission Required',
+          'Pathly needs camera access to take photos for your routes. Please enable camera permissions in your device settings.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         aspect: [16, 9],

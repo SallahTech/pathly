@@ -1,5 +1,5 @@
 import * as Location from 'expo-location';
-import { Location as ExpoLocation } from 'expo-location';
+// import { Location as ExpoLocation } from 'expo-location';
 import { Location as AppLocation } from '../types';
 
 export class LocationService {

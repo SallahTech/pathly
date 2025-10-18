@@ -11,24 +11,26 @@ import RoutesScreen from '../screens/RoutesScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import RouteDetailsScreen from '../screens/RouteDetailsScreen';
 import SaveRouteScreen from '../screens/SaveRouteScreen';
+import FollowRouteScreen from '../screens/FollowRouteScreen';
+import RouteFollowingScreen from '../screens/RouteFollowingScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 function HomeStack() {
   const { colors } = useTheme();
-  
+
   return (
     <Stack.Navigator>
-      <Stack.Screen 
-        name="HomeMain" 
-        component={HomeScreen} 
+      <Stack.Screen
+        name="HomeMain"
+        component={HomeScreen}
         options={{ headerShown: false }}
       />
-      <Stack.Screen 
-        name="SaveRoute" 
+      <Stack.Screen
+        name="SaveRoute"
         component={SaveRouteScreen}
-        options={{ 
+        options={{
           title: 'Save Route',
           headerStyle: { backgroundColor: colors.primary },
           headerTintColor: colors.surface,
@@ -40,21 +42,47 @@ function HomeStack() {
 
 function RoutesStack() {
   const { colors } = useTheme();
-  
+
   return (
     <Stack.Navigator>
-      <Stack.Screen 
-        name="RoutesMain" 
+      <Stack.Screen
+        name="RoutesMain"
         component={RoutesScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen 
-        name="RouteDetails" 
-        component={RouteDetailsScreen}
         options={{ 
+          headerShown: false,
+           title: 'My Routes',
+            headerTitleStyle: { color: colors.text },
+            headerTintColor: colors.text,
+          }}
+      />
+      <Stack.Screen
+        name="RouteDetails"
+        component={RouteDetailsScreen}
+        options={{
           title: 'Route Details',
           headerStyle: { backgroundColor: colors.primary },
-          headerTintColor: colors.surface,
+          headerTitleStyle: { color: colors.text },
+          headerTintColor: colors.text,
+        }}
+      />
+      <Stack.Screen
+        name="FollowRoute"
+        component={FollowRouteScreen}
+        options={{
+          title: 'Follow Route',
+          headerStyle: { backgroundColor: colors.primary },
+          headerTitleStyle: { color: colors.text },
+          headerTintColor: colors.text,
+        }}
+      />
+      <Stack.Screen
+        name="RouteFollowing"
+        component={RouteFollowingScreen}
+        options={{
+          title: 'Following Route',
+          headerStyle: { backgroundColor: colors.primary },
+          headerTitleStyle: { color: colors.text },
+          headerTintColor: colors.text,
         }}
       />
     </Stack.Navigator>
@@ -63,7 +91,7 @@ function RoutesStack() {
 
 export default function AppNavigator() {
   const { colors } = useTheme();
-  
+
   return (
     <NavigationContainer>
       <Tab.Navigator
@@ -91,18 +119,18 @@ export default function AppNavigator() {
           },
         })}
       >
-        <Tab.Screen 
-          name="Home" 
+        <Tab.Screen
+          name="Home"
           component={HomeStack}
           options={{ headerShown: false }}
         />
-        <Tab.Screen 
-          name="Routes" 
+        <Tab.Screen
+          name="Routes"
           component={RoutesStack}
           options={{ headerShown: false }}
         />
-        <Tab.Screen 
-          name="Settings" 
+        <Tab.Screen
+          name="Settings"
           component={SettingsScreen}
           options={{ headerShown: false }}
         />

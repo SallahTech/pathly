@@ -210,15 +210,15 @@ export default function HomeScreen() {
 
   const handleStopVoiceRecording = async () => {
     try {
-      const uri = await voiceService.stopRecording();
-      if (uri) {
+      const result = await voiceService.stopRecording();
+      if (result) {
         setIsRecordingVoice(false);
         
-        // Create voice note object
+        // Create voice note object with actual duration
         const voiceNote: VoiceNote = {
           id: Date.now().toString(),
-          uri,
-          duration: 0, // We'll calculate this later
+          uri: result.uri,
+          duration: result.duration,
           timestamp: Date.now(),
           location: currentLocation,
         };

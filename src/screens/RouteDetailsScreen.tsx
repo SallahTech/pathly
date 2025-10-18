@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Image, Alert, Button } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, Polyline } from 'react-native-maps';
@@ -6,10 +6,12 @@ import { Text,  TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { MotiView } from 'moti';
+import Slider from '@react-native-community/slider';
 
 import { useRoutesStore } from '../stores/routesStore';
 import { useTheme } from '../contexts/ThemeContext';
-import { Route } from '../types';
+import { Route, VoiceNote } from '../types';
+import { voiceService } from '../utils/voiceService';
 
 export default function RouteDetailsScreen() {
   const navigation = useNavigation();
@@ -20,6 +22,10 @@ export default function RouteDetailsScreen() {
   const routeId = (route.params as { routeId: string })?.routeId;
   const routeData = getRoute(routeId);
   const [mapType, setMapType] = useState<'standard' | 'satellite' | 'hybrid'>('standard');
+  const [currentlyPlayingUri, setCurrentlyPlayingUri] = useState<string | null>(null);
+  const [playbackPosition, setPlaybackPosition] = useState<number>(0);
+  const [playbackDuration, setPlaybackDuration] = useState<number>(0);
+  const [isSeeking, setIsSeeking] = useState<boolean>(false);
 
   const themedStyles = createThemedStyles(colors);
 
@@ -62,11 +68,7 @@ export default function RouteDetailsScreen() {
   };
 
   const handleFollowRoute = () => {
-    Alert.alert(
-      'Follow Route',
-      'This feature will guide you through the same path. Coming soon!',
-      [{ text: 'OK' }]
-    );
+    (navigation as any).navigate('FollowRoute', { routeId: routeData.id });
   };
 
   const formatDate = (timestamp: number) => {
@@ -79,7 +81,7 @@ export default function RouteDetailsScreen() {
     });
   };
 
-  const formatTime = (timestamp: number) => {
+  const formatTimestamp = (timestamp: number) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -102,6 +104,79 @@ export default function RouteDetailsScreen() {
       return `${Math.round(meters)}m`;
     }
     return `${(meters / 1000).toFixed(2)}km`;
+  };
+
+  const formatVoiceNoteTime = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  };
+
+  const formatVoiceNoteDuration = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  // Track playback state
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const isPlaying = voiceService.isCurrentlyPlaying();
+      const currentUri = voiceService.getCurrentPlayingUri();
+      const position = voiceService.getPlaybackPosition();
+      const duration = voiceService.getPlaybackDuration();
+      
+      setCurrentlyPlayingUri(isPlaying ? currentUri : null);
+      setPlaybackPosition(position);
+      setPlaybackDuration(duration);
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const handlePlayVoiceNote = async (voiceNote: VoiceNote) => {
+    try {
+      // Reset both UI state and voice service state
+      voiceService.resetPlaybackState();
+      setPlaybackPosition(0);
+      setPlaybackDuration(0);
+      
+      await voiceService.playRecording(voiceNote.uri);
+    } catch (error) {
+      console.error('Error playing voice note:', error);
+      Alert.alert('Error', 'Failed to play voice note.');
+    }
+  };
+
+  const formatTime = (milliseconds: number) => {
+    const seconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  const handleSeek = async (value: number) => {
+    if (!isSeeking) {
+      setIsSeeking(true);
+      try {
+        await voiceService.seekToPosition(value);
+      } catch (error) {
+        console.error('Error seeking:', error);
+      } finally {
+        setIsSeeking(false);
+      }
+    }
+  };
+
+  const handleSeekComplete = async (value: number) => {
+    try {
+      await voiceService.seekToPosition(value);
+    } catch (error) {
+      console.error('Error seeking to final position:', error);
+    }
   };
 
   const getMapRegion = () => {
@@ -251,7 +326,7 @@ export default function RouteDetailsScreen() {
                   <Text style={themedStyles.statLabel}>Started</Text>
                 </View>
                 <Text style={themedStyles.statValue}>
-                  {formatTime(routeData.startTime)}
+                  {formatTimestamp(routeData.startTime)}
                 </Text>
               </View>
               
@@ -261,11 +336,95 @@ export default function RouteDetailsScreen() {
                   <Text style={themedStyles.statLabel}>Ended</Text>
                 </View>
                 <Text style={themedStyles.statValue}>
-                  {formatTime(routeData.endTime)}
+                  {formatTimestamp(routeData.endTime)}
                 </Text>
               </View>
             </View>
           </View>
+
+          {/* Voice Notes */}
+          {routeData.voiceNotes && routeData.voiceNotes.length > 0 && (
+            <View style={themedStyles.voiceNotesCard}>
+              <Text style={themedStyles.voiceNotesTitle}>Voice Notes</Text>
+              
+              {routeData.voiceNotes.map((voiceNote, index) => {
+                const isCurrentlyPlaying = currentlyPlayingUri === voiceNote.uri;
+                const currentPosition = isCurrentlyPlaying ? playbackPosition : 0;
+                // Use actual playback duration if playing, otherwise use voice note duration
+                const currentDuration = isCurrentlyPlaying && playbackDuration > 0 
+                  ? playbackDuration 
+                  : (voiceNote.duration || 0) * 1000;
+                
+                // Debug logging
+                if (isCurrentlyPlaying) {
+                  console.log('Voice note playback debug:', {
+                    uri: voiceNote.uri,
+                    position: currentPosition,
+                    duration: currentDuration,
+                    voiceNoteDuration: voiceNote.duration,
+                    playbackDuration,
+                    playbackPosition
+                  });
+                }
+                
+                return (
+                  <View key={voiceNote.id} style={themedStyles.voiceNoteItem}>
+                    <View style={themedStyles.voiceNoteHeader}>
+                      <View style={themedStyles.voiceNoteInfo}>
+                        <Ionicons name="mic" size={16} color="#2563EB" />
+                        <Text style={themedStyles.voiceNoteTime}>
+                          {formatVoiceNoteTime(voiceNote.timestamp)}
+                        </Text>
+                        <Text style={themedStyles.voiceNoteDuration}>
+                          {formatVoiceNoteDuration(voiceNote.duration)}
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        style={themedStyles.playButton}
+                        onPress={() => handlePlayVoiceNote(voiceNote)}
+                      >
+                        <Ionicons 
+                          name={isCurrentlyPlaying ? "pause" : "play"} 
+                          size={20} 
+                          color="white" 
+                        />
+                      </TouchableOpacity>
+                    </View>
+                    
+                    {/* Seek Bar - always show for voice notes */}
+                    <View style={themedStyles.seekContainer}>
+                        <Text style={themedStyles.seekTimeText}>
+                          {formatTime(currentPosition)}
+                        </Text>
+                        <Slider
+                          style={themedStyles.seekSlider}
+                          minimumValue={0}
+                          maximumValue={Math.max(currentDuration, 1)} // Ensure minimum of 1 to avoid division by zero
+                          value={Math.min(currentPosition, currentDuration)} // Ensure value doesn't exceed duration
+                          onValueChange={handleSeek}
+                          onSlidingComplete={handleSeekComplete}
+                          minimumTrackTintColor="#2563EB"
+                          maximumTrackTintColor={colors.border}
+                          thumbTintColor="#2563EB"
+                        />
+                        <Text style={themedStyles.seekTimeText}>
+                          {formatTime(currentDuration)}
+                        </Text>
+                      </View>
+                    
+                    {voiceNote.location && (
+                      <View style={themedStyles.voiceNoteLocation}>
+                        <Ionicons name="location" size={12} color={colors.textSecondary} />
+                        <Text style={themedStyles.voiceNoteLocationText}>
+                          {voiceNote.location.latitude.toFixed(4)}, {voiceNote.location.longitude.toFixed(4)}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          )}
 
           {/* Action Buttons */}
           <View style={themedStyles.actionButtons}>
@@ -472,5 +631,86 @@ const createThemedStyles = (colors: any) => StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 8,
+  },
+  voiceNotesCard: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 16,
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  voiceNotesTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 12,
+  },
+  voiceNoteItem: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  voiceNoteHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  voiceNoteInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  voiceNoteTime: {
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: '500',
+  },
+  voiceNoteDuration: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  playButton: {
+    backgroundColor: colors.primary,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  voiceNoteLocation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  voiceNoteLocationText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  seekContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    backgroundColor: colors.background,
+    borderRadius: 8,
+  },
+  seekTimeText: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    minWidth: 35,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  seekSlider: {
+    flex: 1,
+    height: 30,
+    marginHorizontal: 8,
   },
 });
